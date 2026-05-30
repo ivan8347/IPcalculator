@@ -3,6 +3,7 @@
 #include"resource.h"
 
 bool g_NoRecurse = false;
+HBRUSH hBackground = CreateSolidBrush(RGB(169, 169, 169));
 
 
 BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -17,8 +18,31 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
+	{
 		SendMessage(GetDlgItem(hwnd, IDC_SPIN_PREFIX), UDM_SETRANGE, 0, MAKEWORD(32, 0));
 		break;
+		
+	}
+	case WM_CTLCOLORDLG:
+		return (INT_PTR)hBackground;
+
+	/*case WM_CTLCOLORSTATIC:
+	{
+		HDC hdc = (HDC)wParam;
+		SetTextColor(hdc, RGB(255, 255, 255));   // белый текст
+		SetBkMode(hdc, TRANSPARENT);
+		return (INT_PTR)hBackground;
+	}
+
+	case WM_CTLCOLOREDIT:
+	{
+		HDC hdc = (HDC)wParam;
+		SetTextColor(hdc, RGB(0, 255, 0));       // зелёный текст
+		SetBkColor(hdc, RGB(0, 0, 0));           // чёрный фон
+		return (INT_PTR)CreateSolidBrush(RGB(0, 0, 0));
+	}
+
+	break;*/
 	case WM_COMMAND:
 	{
 		HWND hIPaddress		= GetDlgItem(hwnd, IDC_IPADDRESS);
@@ -66,18 +90,15 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				if (g_NoRecurse) break;
 				int	prefix = GetDlgItemInt(hwnd, IDC_EDIT_PREFIX, NULL, FALSE);
-
-				if (prefix < 0)	 prefix = 0;
-				if (prefix > 32) prefix = 32;
-
+	
 				DWORD dwIPmask = 0;
 				for (int i = 0; i < prefix; i++)
 					dwIPmask |= (1 << (31 - i));
 
-				BYTE a = (dwIPmask >> 24) & 0xFF;
-				BYTE b = (dwIPmask >> 16) & 0xFF;
-				BYTE c = (dwIPmask >> 8) & 0xFF;
-				BYTE d =  dwIPmask & 0xFF;
+				BYTE a = (dwIPmask >> 24) & 255;
+				BYTE b = (dwIPmask >> 16) & 255;
+				BYTE c = (dwIPmask >> 8) & 255;
+				BYTE d =  dwIPmask & 255;
 
 				LPARAM lpMask = MAKEIPADDRESS(a, b, c, d);
 				g_NoRecurse = true;
