@@ -1,8 +1,8 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include<Windows.h>
 #include<CommCtrl.h>
 #include"resource.h"
-
-bool g_NoRecurse = false;
+#include<cstdio>
 
 
 BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -17,6 +17,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
+		SetFocus(GetDlgItem(hwnd, IDC_IPADDRESS));
 		SendMessage(GetDlgItem(hwnd, IDC_SPIN_PREFIX), UDM_SETRANGE, 0, MAKEWORD(32, 0));
 		break;
 	case WM_COMMAND:
@@ -26,7 +27,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		HWND hEditPrefix	= GetDlgItem(hwnd, IDC_EDIT_PREFIX);
 		DWORD dwIPaddress	= 0;
 		DWORD dwIPmask		= 0;
-		//DWORD dwPrefix		= 0;
+		DWORD dwPrefix		= 0;
 		switch (LOWORD(wParam))
 		{
 		case IDC_IPADDRESS:
@@ -45,44 +46,21 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case IDC_IPMASK:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
-				if (g_NoRecurse) break;
+				
 				SendMessage(hIPmask, IPM_GETADDRESS, 0, (LPARAM)&dwIPmask);
+				dwPrefix = UINT_MAX;
+				for (dwPrefix = 0; dwIPmask; dwPrefix++)dwIPmask <<= 1;
+				CHAR szPrefix[3] = {};
+				sprintf(szPrefix, "%i", dwPrefix);
+				SendMessage(hEditPrefix, WM_SETTEXT, 0, (LPARAM)szPrefix);
 
-				int prefix = 0;
-				for (int i = 31; i >= 0; i--)
-				{
-					if (dwIPmask & (1 << i))
-						prefix++;
-					else
-						break;
-				}
-				g_NoRecurse = true;
-				SetDlgItemInt(hwnd, IDC_EDIT_PREFIX, prefix, FALSE);
-				g_NoRecurse = false;
+				
 			}
 			break;
 		case IDC_EDIT_PREFIX:
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
-				if (g_NoRecurse) break;
-				int	prefix = GetDlgItemInt(hwnd, IDC_EDIT_PREFIX, NULL, FALSE);
-
-				if (prefix < 0)	 prefix = 0;
-				if (prefix > 32) prefix = 32;
-
-				DWORD dwIPmask = 0;
-				for (int i = 0; i < prefix; i++)
-					dwIPmask |= (1 << (31 - i));
-
-				BYTE a = (dwIPmask >> 24) & 0xFF;
-				BYTE b = (dwIPmask >> 16) & 0xFF;
-				BYTE c = (dwIPmask >> 8) & 0xFF;
-				BYTE d =  dwIPmask & 0xFF;
-
-				LPARAM lpMask = MAKEIPADDRESS(a, b, c, d);
-				g_NoRecurse = true;
-				SendMessage(hIPmask, IPM_SETADDRESS, 0, lpMask);
-				g_NoRecurse = false;;
+				
 			}
 			break;
 
